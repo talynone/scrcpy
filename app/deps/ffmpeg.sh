@@ -136,11 +136,10 @@ else
         esac
     elif [[ "$HOST" == winarm64 ]]
     then
-        # Native Windows ARM64 build (MSYS2 CLANGARM64 provides clang, not gcc)
+        # Native Windows ARM64 build (MSYS2 CLANGARM64)
         conf+=(
             --target-os=mingw32
             --arch=aarch64
-            --cc=clang
         )
     fi
 

@@ -26,14 +26,10 @@ cd .. # root project dir
 
 WINXX_BUILD_DIR="$WORK_DIR/build-$WINXX"
 
-# Prefer Ninja for CMake-based deps on MSYS2 (avoids "MSYS Makefiles" quirks).
-# MSYS2 CLANGARM64 provides clang, not gcc — make autotools/cmake/configure
-# pick it up by default.
+# Prefer Ninja for CMake-based deps on MSYS2 (avoids "MSYS Makefiles" quirks)
 if [[ "$BUILD_TYPE" == native ]]
 then
     export CMAKE_GENERATOR=Ninja
-    export CC=clang
-    export CXX=clang++
 fi
 
 app/deps/adb_windows.sh
