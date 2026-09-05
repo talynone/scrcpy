@@ -172,36 +172,45 @@ jobs:
           name: build-win32-intermediate
           path: release/work/build-win32/dist-tar/
 
-  build-windows:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: '64'
-            target: win64
-            runs-on: ubuntu-latest
-            shell: bash
-          - arch: arm64
-            target: winarm64
-            runs-on: windows-11-arm
-            shell: 'msys2 {0}'
-    runs-on: ${{ matrix.runs-on }}
-    defaults:
-      run:
-        shell: ${{ matrix.shell }}
+  build-win64:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Install dependencies (Linux cross-build)
-        if: matrix.target == 'win64'
+      - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y meson ninja-build nasm \
              mingw-w64 mingw-w64-tools libz-mingw-w64-dev
 
-      - name: Setup MSYS2 (native Windows ARM64 build)
-        if: matrix.target == 'winarm64'
+      - name: Build
+        run: release/build_windows.sh 64
+
+      # upload-artifact does not preserve permissions
+      - name: Tar
+        run: |
+            cd release/work/build-win64
+            mkdir dist-tar
+            cd dist-tar
+            tar -C .. -cvf dist.tar.gz dist/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-win64-intermediate
+          path: release/work/build-win64/dist-tar/
+
+  build-winarm64:
+    runs-on: windows-11-arm
+    defaults:
+      run:
+        shell: 'msys2 {0}'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
           msystem: CLANGARM64
@@ -222,12 +231,12 @@ jobs:
             mingw-w64-clang-aarch64-zlib
 
       - name: Build
-        run: release/build_windows.sh ${{ matrix.arch }}
+        run: release/build_windows.sh arm64
 
       # upload-artifact does not preserve permissions
       - name: Tar
         run: |
-            cd release/work/build-${{ matrix.target }}
+            cd release/work/build-winarm64
             mkdir dist-tar
             cd dist-tar
             tar -C .. -cvf dist.tar.gz dist/
@@ -235,8 +244,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: build-${{ matrix.target }}-intermediate
-          path: release/work/build-${{ matrix.target }}/dist-tar/
+          name: build-winarm64-intermediate
+          path: release/work/build-winarm64/dist-tar/
 
   build-macos-aarch64:
     runs-on: macos-latest
@@ -399,7 +408,7 @@ jobs:
   package-win64:
     needs:
       - build-scrcpy-server
-      - build-windows
+      - build-win64
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -435,7 +444,7 @@ jobs:
   package-winarm64:
     needs:
       - build-scrcpy-server
-      - build-windows
+      - build-winarm64
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
