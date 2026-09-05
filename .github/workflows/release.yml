@@ -238,6 +238,52 @@ jobs:
           name: build-${{ matrix.target }}-intermediate
           path: release/work/build-${{ matrix.target }}/dist-tar/
 
+  build-winarm64:
+    runs-on: windows-11-arm
+    defaults:
+      run:
+        shell: 'msys2 {0}'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          update: true
+          install: >-
+            base-devel
+            unzip
+            wget
+            autoconf
+            automake
+            libtool
+            make
+            mingw-w64-clang-aarch64-toolchain
+            mingw-w64-clang-aarch64-meson
+            mingw-w64-clang-aarch64-ninja
+            mingw-w64-clang-aarch64-cmake
+            mingw-w64-clang-aarch64-pkgconf
+            mingw-w64-clang-aarch64-zlib
+
+      - name: Build
+        run: release/build_windows.sh arm64
+
+      # upload-artifact does not preserve permissions
+      - name: Tar
+        run: |
+            cd release/work/build-winarm64
+            mkdir dist-tar
+            cd dist-tar
+            tar -C .. -cvf dist.tar.gz dist/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-winarm64-intermediate
+          path: release/work/build-winarm64/dist-tar/
+
   build-macos-aarch64:
     runs-on: macos-latest
     steps:
